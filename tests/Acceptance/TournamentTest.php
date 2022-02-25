@@ -3,6 +3,7 @@
 namespace App\Tests\Acceptance;
 
 use ApiPlatform\Core\Bridge\Symfony\Bundle\Test\ApiTestCase;
+use Symfony\Component\HttpFoundation\Response;
 
 class TournamentTest extends ApiTestCase
 {
@@ -21,6 +22,42 @@ class TournamentTest extends ApiTestCase
         $response = $client->getResponse()->toArray();
 
         $this->assertIsString($response["id"]);
+    }
+
+    public function testTournamentShouldHaveName(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/tournaments', [
+            'headers' => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            'body' => json_encode([])
+        ]);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    public function testTournamentShouldHaveUniqueName(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/tournaments', [
+            'headers' => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            'body' => json_encode(['name' => 'Tournament'])
+        ]);
+        $this->assertResponseStatusCodeSame(200);
+
+        $client->request('POST', '/api/tournaments', [
+            'headers' => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            'body' => json_encode(['name' => 'Tournament'])
+        ]);
+        $this->assertResponseStatusCodeSame(409, "A Tournament has already this name");
     }
 
     public function testTournamentCreationShouldEnableToRetrieveAfter(): void

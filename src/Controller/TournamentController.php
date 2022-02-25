@@ -27,12 +27,18 @@ class TournamentController extends AbstractController
         $parametersAsArray = json_decode($request->getContent(), true);
         $uuid = Uuid::v4();
 
-        $tournament = new Tournament($uuid, $parametersAsArray["name"]);
-        $this->service->saveTournament($tournament);
+        if (!isset($parametersAsArray["name"])) {
+            return $this->json('Tournament should have a name', Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
-        return $this->json([
-            'id' => $uuid,
-        ]);
+        $name = $parametersAsArray["name"];
+        if ($this->service->getTournamentByName($name) === null) {
+            $tournament = new Tournament($uuid, $name);
+            $this->service->saveTournament($tournament);
+            return $this->json(['id' => $uuid]);
+        } else {
+            return $this->json('A tournament already exist', Response::HTTP_CONFLICT);
+        }
     }
 
     /**
