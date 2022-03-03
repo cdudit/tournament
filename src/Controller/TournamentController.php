@@ -52,4 +52,17 @@ class TournamentController extends AbstractController
         }
         return $this->json($tournament);
     }
+
+    /**
+     * @Route("/api/tournaments/{id}/participants", name="get_participants_by_tournament", methods={"GET"})
+     */
+    public function getParticipantsByTournament(string $id): Response
+    {
+        $tournament = $this->service->getTournament($id);
+        if (null == $tournament) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->json($this->service->getParticipants($id));
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Model\Participant;
 use App\Model\Tournament;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
@@ -35,5 +36,18 @@ class TournamentService
             }
         }
         return null;
+    }
+
+    public function getParticipants(string $tournamentId)
+    {
+        $result = array();
+        foreach ($this->session->all() as $sessionItem) {
+            if (get_class($sessionItem) == Participant::class && $sessionItem->tournamentId == $tournamentId) {
+                $participantToAdd = array("id" => $sessionItem->id, "name" => $sessionItem->name, "elo" => $sessionItem->elo);
+                array_push($result, $participantToAdd);
+            }
+        }
+
+        return $result;
     }
 }
