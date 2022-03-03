@@ -37,4 +37,10 @@ class ParticipantService
         $this->session->set($participant->id, $participant);
         $this->session->save();
     }
+
+    public function deleteParticipant(string $participantId)
+    {
+        $this->session->remove($participantId);
+        $this->session->save();
+    }
 }

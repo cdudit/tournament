@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Model\Tournament;
+use App\Services\ParticipantService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,11 +13,13 @@ use Symfony\Component\Uid\Uuid;
 
 class TournamentController extends AbstractController
 {
-    private TournamentService $service;
+    private TournamentService $tournamentService;
+    private ParticipantService $participantService;
 
-    public function __construct(TournamentService $service)
+    public function __construct(TournamentService $tournamentService, ParticipantService $participantService)
     {
-        $this->service = $service;
+        $this->tournamentService = $tournamentService;
+        $this->participantService = $participantService;
     }
 
     /**
@@ -32,9 +35,9 @@ class TournamentController extends AbstractController
         }
 
         $name = $parametersAsArray["name"];
-        if ($this->service->getTournamentByName($name) === null) {
+        if ($this->tournamentService->getTournamentByName($name) === null) {
             $tournament = new Tournament($uuid, $name);
-            $this->service->saveTournament($tournament);
+            $this->tournamentService->saveTournament($tournament);
             return $this->json(['id' => $uuid]);
         } else {
             return $this->json('A tournament already exist', Response::HTTP_CONFLICT);
@@ -46,7 +49,7 @@ class TournamentController extends AbstractController
      */
     public function getTournament(string $id): Response
     {
-        $tournament = $this->service->getTournament($id);
+        $tournament = $this->tournamentService->getTournament($id);
         if (null == $tournament) {
             throw $this->createNotFoundException();
         }
@@ -58,11 +61,32 @@ class TournamentController extends AbstractController
      */
     public function getParticipantsByTournament(string $id): Response
     {
-        $tournament = $this->service->getTournament($id);
+        $tournament = $this->tournamentService->getTournament($id);
         if (null == $tournament) {
             throw $this->createNotFoundException();
         }
 
-        return $this->json($this->service->getParticipants($id));
+        return $this->json($this->tournamentService->getParticipants($id));
+    }
+
+    /**
+     * @Route("/api/tournaments/{tournamentId}/participants/{participantId}", name="delete_participants_of_tournament", methods={"DELETE"})
+     */
+    public function deleteParticipantOfTournament(string $tournamentId, string $participantId): Response
+    {
+        $tournament = $this->tournamentService->getTournament($tournamentId);
+        if (null == $tournament) {
+            throw $this->createNotFoundException();
+        }
+
+        $participants = $this->tournamentService->getParticipants($tournamentId);
+
+        foreach ($participants as $participant) {
+            if ($participant["id"] == $participantId) {
+                $this->participantService->deleteParticipant($participantId);
+                return $this->json([], Response::HTTP_NO_CONTENT);
+            }
+        }
+        return $this->json("Participant not found", Response::HTTP_NOT_FOUND);
     }
 }

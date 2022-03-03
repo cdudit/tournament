@@ -146,4 +146,62 @@ class ParticipantTest extends ApiTestCase
 
         $this->assertResponseStatusCodeSame(400, "A participant already exist");
     }
+
+    public function testDeleteParticipantShouldWork(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/tournaments', [
+            'headers' => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            'body' => json_encode(['name' => 'Tournament'])
+        ]);
+        $this->assertResponseStatusCodeSame(200);
+        $tournamentId = $client->getResponse()->toArray()["id"];
+
+        $this->assertResponseStatusCodeSame(200);
+        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
+            'headers' => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            'body' => json_encode([
+                "name"  => "Novak Djokovic",
+                "elo"   => 2500
+            ])
+        ]);
+        $this->assertResponseStatusCodeSame(200);
+        $participantId = $client->getResponse()->toArray()["id"];
+
+        $client->request('DELETE', "/api/tournaments/$tournamentId/participants/$participantId");
+        $this->assertResponseStatusCodeSame(204);
+
+        $client->request('GET', "/api/tournaments/$tournamentId/participants");
+        $this->assertResponseStatusCodeSame(200);
+        $responseBody = $client->getResponse()->toArray();
+
+        $this->assertJsonEquals([]);
+    }
+
+
+    public function testDeleteParticipantNotExistShouldNotWork(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/tournaments', [
+            'headers' => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            'body' => json_encode(['name' => 'Tournament'])
+        ]);
+        $this->assertResponseStatusCodeSame(200);
+        $tournamentId = $client->getResponse()->toArray()["id"];
+
+        $this->assertResponseStatusCodeSame(200);
+        $participantId = Uuid::v4();
+
+        $client->request('DELETE', "/api/tournaments/$tournamentId/participants/$participantId");
+        $this->assertResponseStatusCodeSame(404);
+    }
 }
