@@ -7,46 +7,45 @@ use Symfony\Component\Uid\Uuid;
 
 class ParticipantTest extends ApiTestCase
 {
-    public function testParticipantCreationShouldBeOK(): void
+    protected $client;
+    protected $tournamentId;
+    protected $headers = [
+        'Content-Type: application/json',
+        'Accept: application/json',
+    ];
+
+    public function setUp(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
+        $this->client = static::createClient();
+        $this->client->request('POST', '/api/tournaments', [
+            'headers' => $this->headers,
             'body' => json_encode(['name' => 'Tournament'])
         ]);
-        $this->assertResponseStatusCodeSame(200);
-        $tournamentId = $client->getResponse()->toArray()["id"];
+        $this->tournamentId = $this->client->getResponse()->toArray()["id"];
+    }
 
-        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
+    public function testParticipantCreationShouldBeOK(): void
+    {
+        $this->client->request('POST', "/api/tournaments/$this->tournamentId/participants", [
+            'headers' => $this->headers,
             'body' => json_encode([
-                "name"  => "Novak Djokovic",
-                "elo"   => 2500,
-                "tounamentId" => $tournamentId
+                "name"          => "Novak Djokovic",
+                "elo"           => 2500,
+                "tounamentId"   => $this->tournamentId
             ])
         ]);
 
         $this->assertResponseIsSuccessful();
-        $response = $client->getResponse()->toArray();
+        $response = $this->client->getResponse()->toArray();
         $this->assertIsString($response["id"]);
     }
 
     public function testParticipantTournamentNotExists(): void
     {
-        $client = static::createClient();
         $id = Uuid::v4();
-        $client->request('POST', "/api/tournaments/$id/participants", [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode([
+        $this->client->request('POST', "/api/tournaments/$id/participants", [
+            'headers'   => $this->headers,
+            'body'      => json_encode([
                 "name"  => "Novak Djokovic",
                 "elo"   => 2500
             ])
@@ -57,23 +56,9 @@ class ParticipantTest extends ApiTestCase
 
     public function testParticipantCreationWithNoELOShouldNotWork(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode(['name' => 'Tournament'])
-        ]);
-        $this->assertResponseStatusCodeSame(200);
-        $tournamentId = $client->getResponse()->toArray()["id"];
-
-        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode([
+        $this->client->request('POST', "/api/tournaments/$this->tournamentId/participants", [
+            'headers'   => $this->headers,
+            'body'      => json_encode([
                 "name"  => "Novak Djokovic"
             ])
         ]);
@@ -83,24 +68,10 @@ class ParticipantTest extends ApiTestCase
 
     public function testParticipantCreationWithNoNameShouldNotWork(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode(['name' => 'Tournament'])
-        ]);
-        $this->assertResponseStatusCodeSame(200);
-        $tournamentId = $client->getResponse()->toArray()["id"];
-
-        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode([
-                "elo"  => 2500
+        $this->client->request('POST', "/api/tournaments/$this->tournamentId/participants", [
+            'headers'   => $this->headers,
+            'body'      => json_encode([
+                "elo"   => 2500
             ])
         ]);
 
@@ -109,36 +80,19 @@ class ParticipantTest extends ApiTestCase
 
     public function testParticipantCreationParticipantExistAlready(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode(['name' => 'Tournament'])
-        ]);
-        $this->assertResponseStatusCodeSame(200);
-        $tournamentId = $client->getResponse()->toArray()["id"];
-
-        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode([
+        $this->client->request('POST', "/api/tournaments/$this->tournamentId/participants", [
+            'headers'   => $this->headers,
+            'body'      => json_encode([
                 "name"  => "Novak Djokovic",
-                "elo"  => 2500
+                "elo"   => 2500
             ])
         ]);
 
         $this->assertResponseStatusCodeSame(200);
 
-        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode([
+        $this->client->request('POST', "/api/tournaments/$this->tournamentId/participants", [
+            'headers'   => $this->headers,
+            'body'      => json_encode([
                 "name"  => "Novak Djokovic",
                 "elo"   => 2500
             ])
@@ -149,59 +103,30 @@ class ParticipantTest extends ApiTestCase
 
     public function testDeleteParticipantShouldWork(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode(['name' => 'Tournament'])
-        ]);
         $this->assertResponseStatusCodeSame(200);
-        $tournamentId = $client->getResponse()->toArray()["id"];
-
-        $this->assertResponseStatusCodeSame(200);
-        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode([
+        $this->client->request('POST', "/api/tournaments/$this->tournamentId/participants", [
+            'headers'   => $this->headers,
+            'body'      => json_encode([
                 "name"  => "Novak Djokovic",
                 "elo"   => 2500
             ])
         ]);
         $this->assertResponseStatusCodeSame(200);
-        $participantId = $client->getResponse()->toArray()["id"];
+        $participantId = $this->client->getResponse()->toArray()["id"];
 
-        $client->request('DELETE', "/api/tournaments/$tournamentId/participants/$participantId");
+        $this->client->request('DELETE', "/api/tournaments/$this->tournamentId/participants/$participantId");
         $this->assertResponseStatusCodeSame(204);
 
-        $client->request('GET', "/api/tournaments/$tournamentId/participants");
+        $this->client->request('GET', "/api/tournaments/$this->tournamentId/participants");
         $this->assertResponseStatusCodeSame(200);
-        $responseBody = $client->getResponse()->toArray();
-
         $this->assertJsonEquals([]);
     }
 
 
     public function testDeleteParticipantNotExistShouldNotWork(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode(['name' => 'Tournament'])
-        ]);
-        $this->assertResponseStatusCodeSame(200);
-        $tournamentId = $client->getResponse()->toArray()["id"];
-
-        $this->assertResponseStatusCodeSame(200);
         $participantId = Uuid::v4();
-
-        $client->request('DELETE', "/api/tournaments/$tournamentId/participants/$participantId");
+        $this->client->request('DELETE', "/api/tournaments/$this->tournamentId/participants/$participantId");
         $this->assertResponseStatusCodeSame(404);
     }
 }

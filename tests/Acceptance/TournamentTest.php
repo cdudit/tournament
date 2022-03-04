@@ -3,33 +3,37 @@
 namespace App\Tests\Acceptance;
 
 use ApiPlatform\Core\Bridge\Symfony\Bundle\Test\ApiTestCase;
-use App\Model\Participant;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
 class TournamentTest extends ApiTestCase
 {
-    public function testTournamentCreation(): void
+    protected $client;
+    protected $tournamentId;
+    protected $headers = [
+        'Content-Type: application/json',
+        'Accept: application/json',
+    ];
+
+    public function setUp(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
+        $this->client = static::createClient();
+        $this->client->request('POST', '/api/tournaments', [
+            'headers' => $this->headers,
             'body' => json_encode(['name' => 'Tournament'])
         ]);
+        $this->tournamentId = $this->client->getResponse()->toArray()["id"];
+    }
 
-        $this->assertResponseIsSuccessful();
-        $response = $client->getResponse()->toArray();
-
+    public function testTournamentCreation(): void
+    {
+        $response = $this->client->getResponse()->toArray();
         $this->assertIsString($response["id"]);
     }
 
     public function testTournamentShouldHaveName(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
+        $this->client->request('POST', '/api/tournaments', [
             'headers' => [
                 'Content-Type: application/json',
                 'Accept: application/json',
@@ -42,17 +46,7 @@ class TournamentTest extends ApiTestCase
 
     public function testTournamentShouldHaveUniqueName(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode(['name' => 'Tournament'])
-        ]);
-        $this->assertResponseStatusCodeSame(200);
-
-        $client->request('POST', '/api/tournaments', [
+        $this->client->request('POST', '/api/tournaments', [
             'headers' => [
                 'Content-Type: application/json',
                 'Accept: application/json',
@@ -64,22 +58,9 @@ class TournamentTest extends ApiTestCase
 
     public function testTournamentCreationShouldEnableToRetrieveAfter(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode(['name' => 'Tournament'])
-        ]);
+        $response = $this->client->getResponse()->toArray();
 
-        $this->assertResponseIsSuccessful();
-        $response = $client->getResponse()->toArray();
-        $tournamentId = $response["id"];
-
-        $this->assertIsString($tournamentId);
-
-        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
+        $this->client->request('POST', "/api/tournaments/$this->tournamentId/participants", [
             'headers' => [
                 'Content-Type: application/json',
                 'Accept: application/json',
@@ -90,9 +71,9 @@ class TournamentTest extends ApiTestCase
             ])
         ]);
         $this->assertResponseStatusCodeSame(200);
-        $client->request('GET', "/api/tournaments/$tournamentId");
+        $this->client->request('GET', "/api/tournaments/$this->tournamentId");
 
-        $response = json_decode(json_decode($client->getResponse()->getContent()));
+        $response = json_decode(json_decode($this->client->getResponse()->getContent()));
         $participantId = $response->id;
 
         $this->assertResponseIsSuccessful();
@@ -114,26 +95,14 @@ class TournamentTest extends ApiTestCase
 
     public function testShouldReturnEmptyIfTournamentDoesNotExist(): void
     {
-        static::createClient()->request('GET', '/api/tournaments/123');
-
+        $id = Uuid::v4();
+        $this->client->request('GET', "/api/tournaments/$id");
         $this->assertResponseStatusCodeSame(404);
     }
 
     public function testTournamentGetParticipants(): void
     {
-        $client = static::createClient();
-        $client->request('POST', '/api/tournaments', [
-            'headers' => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ],
-            'body' => json_encode(['name' => 'Tournament'])
-        ]);
-        $this->assertResponseStatusCodeSame(200);
-        $tournamentId = $client->getResponse()->toArray()["id"];
-
-        $this->assertResponseStatusCodeSame(200);
-        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
+        $this->client->request('POST', "/api/tournaments/$this->tournamentId/participants", [
             'headers' => [
                 'Content-Type: application/json',
                 'Accept: application/json',
@@ -144,11 +113,11 @@ class TournamentTest extends ApiTestCase
             ])
         ]);
         $this->assertResponseStatusCodeSame(200);
-        $participantId = $client->getResponse()->toArray()["id"];
+        $participantId = $this->client->getResponse()->toArray()["id"];
 
-        $client->request('GET', "/api/tournaments/$tournamentId/participants");
+        $this->client->request('GET', "/api/tournaments/$this->tournamentId/participants");
         $this->assertResponseStatusCodeSame(200);
-        $responseBody = $client->getResponse()->toArray();
+        $responseBody = $this->client->getResponse()->toArray();
         $this->assertArrayHasKey(0, $responseBody);
         $this->assertArrayHasKey("id", $responseBody[0]);
         $this->assertArrayHasKey("name", $responseBody[0]);
