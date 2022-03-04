@@ -84,14 +84,10 @@ class TournamentController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        $participants = $this->tournamentService->getParticipants($tournamentId);
-
-        foreach ($participants as $participant) {
-            if ($participant["id"] == $participantId) {
-                $this->participantService->deleteParticipant($participantId);
-                return $this->json([], Response::HTTP_NO_CONTENT);
-            }
+        $deleteCompleted = $this->participantService->deleteParticipant($participantId);
+        if (!$deleteCompleted) {
+            return $this->json("Participant not found", Response::HTTP_NOT_FOUND);
         }
-        return $this->json("Participant not found", Response::HTTP_NOT_FOUND);
+        return $this->json([], Response::HTTP_NO_CONTENT);
     }
 }

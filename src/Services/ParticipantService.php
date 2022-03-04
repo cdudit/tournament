@@ -40,7 +40,13 @@ class ParticipantService
 
     public function deleteParticipant(string $participantId)
     {
-        $this->session->remove($participantId);
-        $this->session->save();
+        $participant = $this->session->get($participantId);
+        if ($participant !== null) {
+            $this->session->remove($participantId);
+            $this->session->save();
+            return true;
+        } else {
+            return false;
+        }
     }
 }
