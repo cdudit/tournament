@@ -14,7 +14,7 @@ class ParticipantTest extends ApiTestCase
         'Accept: application/json',
     ];
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->client = static::createClient();
         $this->client->request('POST', '/api/tournaments', [

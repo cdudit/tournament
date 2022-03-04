@@ -15,7 +15,7 @@ class TournamentTest extends ApiTestCase
         'Accept: application/json',
     ];
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->client = static::createClient();
         $this->client->request('POST', '/api/tournaments', [
@@ -27,8 +27,7 @@ class TournamentTest extends ApiTestCase
 
     public function testTournamentCreation(): void
     {
-        $response = $this->client->getResponse()->toArray();
-        $this->assertIsString($response["id"]);
+        $this->assertIsString($this->tournamentId);
     }
 
     public function testTournamentShouldHaveName(): void

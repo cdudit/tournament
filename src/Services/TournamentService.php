@@ -31,7 +31,7 @@ class TournamentService
         $tournaments = $this->session->all();
 
         foreach ($tournaments as $tournament) {
-            if ($tournament->name == $name) {
+            if ($tournament->name === $name) {
                 return $tournament;
             }
         }
@@ -42,7 +42,7 @@ class TournamentService
     {
         $result = array();
         foreach ($this->session->all() as $sessionItem) {
-            if (get_class($sessionItem) == Participant::class && $sessionItem->tournamentId == $tournamentId) {
+            if (get_class($sessionItem) === Participant::class && $sessionItem->tournamentId == $tournamentId) {
                 $participantToAdd = array("id" => $sessionItem->id, "name" => $sessionItem->name, "elo" => $sessionItem->elo);
                 array_push($result, $participantToAdd);
             }

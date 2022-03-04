@@ -28,7 +28,6 @@ class TournamentController extends AbstractController
     public function addTournament(Request $request): Response
     {
         $parametersAsArray = json_decode($request->getContent(), true);
-        $uuid = Uuid::v4();
 
         if (!isset($parametersAsArray["name"])) {
             return $this->json('Tournament should have a name', Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -36,9 +35,9 @@ class TournamentController extends AbstractController
 
         $name = $parametersAsArray["name"];
         if ($this->tournamentService->getTournamentByName($name) === null) {
-            $tournament = new Tournament($uuid, $name);
+            $tournament = new Tournament($name);
             $this->tournamentService->saveTournament($tournament);
-            return $this->json(['id' => $uuid]);
+            return $this->json(['id' => $tournament->id]);
         } else {
             return $this->json('A tournament already exist', Response::HTTP_CONFLICT);
         }
