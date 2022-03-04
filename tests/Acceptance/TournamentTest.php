@@ -3,6 +3,7 @@
 namespace App\Tests\Acceptance;
 
 use ApiPlatform\Core\Bridge\Symfony\Bundle\Test\ApiTestCase;
+use App\Model\Participant;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -74,13 +75,41 @@ class TournamentTest extends ApiTestCase
 
         $this->assertResponseIsSuccessful();
         $response = $client->getResponse()->toArray();
+        $tournamentId = $response["id"];
 
-        $this->assertIsString($response["id"]);
+        $this->assertIsString($tournamentId);
 
-        $client->request('GET', '/api/tournaments/' . $response["id"]);
+        $client->request('POST', "/api/tournaments/$tournamentId/participants", [
+            'headers' => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            'body' => json_encode([
+                "name"  => "Novak Djokovic",
+                "elo"   => 2500
+            ])
+        ]);
+        $this->assertResponseStatusCodeSame(200);
+        $client->request('GET', "/api/tournaments/$tournamentId");
+
+        $response = json_decode(json_decode($client->getResponse()->getContent()));
+        $participantId = $response->id;
+
         $this->assertResponseIsSuccessful();
-        $response = $client->getResponse()->toArray();
-        $this->assertEquals("Tournament", $response["name"]);
+        $this->assertEquals("Tournament", $response->name);
+
+        $this->assertArrayHasKey(0, $response->participants);
+        $this->assertJsonEquals([
+            "id"    => $response->id,
+            "name"  => "Tournament",
+            "participants"   => [
+                json_encode([
+                    "id"    => $participantId,
+                    "name"  => "Novak Djokovic",
+                    "elo"   => 2500
+                ])
+            ]
+        ]);
     }
 
     public function testShouldReturnEmptyIfTournamentDoesNotExist(): void

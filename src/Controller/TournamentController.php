@@ -53,7 +53,13 @@ class TournamentController extends AbstractController
         if (null == $tournament) {
             throw $this->createNotFoundException();
         }
-        return $this->json($tournament);
+        $participants = $this->tournamentService->getParticipants($id);
+        $json = json_encode([
+            "id"            => $id,
+            "name"          => $tournament->name,
+            "participants"  => $participants
+        ]);
+        return $this->json($json);
     }
 
     /**
